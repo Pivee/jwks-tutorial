@@ -6,13 +6,15 @@ require('dotenv').config();
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(morgan('dev'));
+app.use(morgan("dev"));
 
-app.get('/', async (req, res, next) => {
-  res.send({ message: 'Awesome it works 🐻' });
+app.get("/", async (req, res, next) => {
+  res.send({ message: "Awesome it works 🐻" });
 });
 
-app.use('/api', require('./routes/api.route'));
+app.use("/api", require("./routes/api.route"));
+
+app.use("/token", require("./routes/token.route"));
 
 app.use((req, res, next) => {
   next(createError.NotFound());
