@@ -103,3 +103,103 @@ module.exports = {
   getRsaPrivateKey,
 };
 ```
+
+## 5. Create a protected route on the resource server to test
+
+```js
+> app.js
+
+...
+
+app.use("/protected", require("./routes/protected.route"));
+
+...
+```
+
+```js
+> protected.route.js
+
+const router = require("express").Router();
+const { getRsaPublicKey } = require("../utils/getRsaPublicKey");
+const { verifyToken } = require("../utils/verifyToken");
+
+router.get("/", async (req, res, next) => {
+  const bearerToken = req?.headers?.authorization?.split(" ")[1];
+
+  let verifiedPayload;
+  try {
+    verifiedPayload = verifyToken(bearerToken, getRsaPublicKey());
+  } catch (error) {
+    if (error.message === "invalid signature") {
+      return res.status(401).send({ error: "Unauthorized" });
+    }
+  }
+  if (!verifiedPayload) return res.status(401).send({ error: "Unauthorized" });
+
+  return res.send({
+    message: "This is a protected route. 🛡",
+    token: bearerToken,
+    verifiedPayload,
+  });
+});
+
+module.exports = router;
+```
+
+```js
+> verifyToken.js
+
+const jwt = require("jsonwebtoken");
+
+function verifyToken(token, secret, algorithms = ["RS256"]) {
+  return jwt.verify(token, secret, {
+    algorithms,
+  });
+}
+
+module.exports = {
+  verifyToken,
+};
+```
+
+## 6. Create JWKS endpoint on the auth server
+
+The convention is to have it as `/.well-known/jwks.json`.
+
+```js
+> app.js
+
+...
+
+app.use("/.well-known/jwks.json", require("./routes/jwks.json.route"));
+
+...
+```
+
+```js
+> jwks.json.route.js
+
+const router = require("express").Router();
+const { getJwksForRsaPublicKey } = require("../utils/getJwks");
+const { getRsaPrivateKey } = require("../utils/getRsaPrivateKey");
+
+router.get("/", async (req, res, next) => {
+  return res.send(getJwks(getRsaPrivateKey()));
+});
+
+module.exports = router;
+```
+
+```js
+> getJwks.js
+
+const pem2jwk = require("pem-jwk").pem2jwk;
+
+function getJwks(privateKey) {
+  return pem2jwk(privateKey, { use: "sig" }, "public");
+}
+
+module.exports = {
+  getJwks,
+};
+```
