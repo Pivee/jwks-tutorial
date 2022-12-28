@@ -12,6 +12,8 @@ app.get("/", async (req, res, next) => {
   res.send({ message: "Awesome it works 🐻" });
 });
 
+app.use("/.well-known/jwks.json", require("./routes/jwks.json.route"));
+
 app.use("/api", require("./routes/api.route"));
 
 app.use("/token", require("./routes/token.route"));
