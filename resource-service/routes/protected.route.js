@@ -1,6 +1,4 @@
 const router = require("express").Router();
-const jwt = require("jsonwebtoken");
-const fs = require("fs");
 const { getRsaPublicKey } = require("../utils/getRsaPublicKey");
 const { verifyToken } = require("../utils/verifyToken");
 
