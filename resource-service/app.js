@@ -14,6 +14,8 @@ app.get('/', async (req, res, next) => {
 
 app.use('/api', require('./routes/api.route'));
 
+app.use("/protected", require("./routes/protected.route"));
+
 app.use((req, res, next) => {
   next(createError.NotFound());
 });
