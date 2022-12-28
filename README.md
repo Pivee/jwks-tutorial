@@ -31,3 +31,75 @@ openssl genrsa -out ./certs/private.pem
 openssl rsa -in ./certs/private.pem -pubout -out ./certs/public.pem
 ```
 
+## 4. Add /token endpoint to Auth Server
+
+```js
+> token.route.js
+
+const router = require("express").Router();
+const { createToken } = require("../utils/createToken");
+const { getRsaPrivateKey } = require("../utils/getRsaPrivateKey");
+
+router.get("/", async (req, res, next) => {
+  const payload = {};
+
+  res.send({
+    tokenResponse: {
+      access_token: createToken(payload, getRsaPrivateKey()),
+    },
+  });
+});
+
+module.exports = router;
+```
+
+```js
+> app.js
+...
+
+app.use("/token", require("./routes/token.route"));
+
+...
+```
+
+```js
+> createToken.js
+
+const jwt = require("jsonwebtoken");
+
+function createToken(payload, secret, expiresIn = "15min") {
+  const token = jwt.sign(payload, secret, {
+    expiresIn,
+    algorithm: "RS256",
+  });
+
+  return token;
+}
+
+module.exports = { createToken };
+```
+
+```js
+const fs = require("fs");
+const { join } = require("path");
+
+function getRsaPrivateKey(
+  filePath = join(__dirname, "../certs/private.pem"),
+  { returnType = undefined } = {}
+) {
+  const secret = fs.readFileSync(filePath);
+
+  switch (returnType) {
+    case "utf8":
+      return secret.toString("utf8");
+    case "base64":
+      return secret.toString("base64");
+  }
+
+  return secret;
+}
+
+module.exports = { 
+  getRsaPrivateKey,
+};
+```
