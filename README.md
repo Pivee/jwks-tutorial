@@ -196,10 +196,14 @@ module.exports = router;
 const pem2jwk = require("pem-jwk").pem2jwk;
 
 function getJwks(privateKey) {
-  return pem2jwk(privateKey, { use: "sig" }, "public");
+  return { keys: [pem2jwk(privateKey, { use: "sig" }, "public")] };
 }
 
 module.exports = {
   getJwks,
 };
 ```
+
+## 7. Install `jwks-rsa` on the resource server
+
+
