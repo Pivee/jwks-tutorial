@@ -180,11 +180,11 @@ app.use("/.well-known/jwks.json", require("./routes/jwks.json.route"));
 > jwks.json.route.js
 
 const router = require("express").Router();
-const { getJwksForRsaPublicKey } = require("../utils/getJwks");
-const { getRsaPrivateKey } = require("../utils/getRsaPrivateKey");
+const { getJwks } = require("../utils/getJwks");
+const { getRsaPublicKey } = require("../utils/getRsaPublicKey");
 
 router.get("/", async (req, res, next) => {
-  return res.send(getJwks(getRsaPrivateKey()));
+  return res.send(getJwks(getRsaPublicKey()));
 });
 
 module.exports = router;
@@ -195,8 +195,16 @@ module.exports = router;
 
 const pem2jwk = require("pem-jwk").pem2jwk;
 
-function getJwks(privateKey) {
-  return { keys: [pem2jwk(privateKey, { use: "sig" }, "public")] };
+function getJwks(publicKey) {
+  return {
+    keys: [
+      pem2jwk(
+        publicKey,
+        { alg: "RS256", use: "sig", kid: "AUTH_KID" },
+        "public"
+      ),
+    ],
+  };
 }
 
 module.exports = {
@@ -206,4 +214,80 @@ module.exports = {
 
 ## 7. Install `jwks-rsa` on the resource server
 
+```js
+> getJwksClient.js
 
+const jwksClient = require("jwks-rsa");
+
+async function getJwksClient(jwksUri) {
+  const client = jwksClient({
+    jwksUri,
+    cache: true,
+    rateLimit: true,
+  });
+
+  return client;
+}
+
+module.exports = {
+  getJwksClient,
+};
+```
+
+```js
+> getRsaPublicKey.js
+
+...
+
+async function getRsaPublicKeyFromJwks(
+  jwksUri = "http://localhost:4000/.well-known/jwks.json",
+  { returnType = undefined } = {}
+) {
+  const key = await (await getJwksClient(jwksUri)).getSigningKey();
+
+  return key;
+}
+
+...
+```
+
+## 8. Verify token when accessing the protected route
+
+```js
+> protected.route.js
+
+const router = require("express").Router();
+const { getRsaPublicKeyFromFile } = require("../utils/getRsaPublicKey");
+const { verifyToken } = require("../utils/verifyToken");
+
+router.get("/", async (req, res, next) => {
+  const bearerToken = req?.headers?.authorization?.split(" ")[1];
+
+  let verifiedPayload;
+
+  try {
+    // // ⏺ Verify the token using locally stored RSA public key
+    // verifiedPayload = verifyToken(bearerToken, getRsaPublicKeyFromFile());
+    // ⏺ Verify the token using JWKS retrieved from the auth server
+    verifiedPayload = verifyToken(bearerToken, getRsaPublicKeyFromFile());
+  } catch (error) {
+    if (error.message === "invalid signature") {
+      return res
+        .status(401)
+        .send({ error: "Unauthorized: Invalid signature." });
+    }
+  }
+  if (!verifiedPayload)
+    return res
+      .status(401)
+      .send({ error: "Unauthorized: Token verification failed." });
+
+  return res.send({
+    message: "This is a protected route. 🛡",
+    token: bearerToken,
+    verifiedPayload,
+  });
+});
+
+module.exports = router;
+```
