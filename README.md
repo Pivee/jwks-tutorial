@@ -1,5 +1,11 @@
 # JWKS Tutorial
 
+> Resources:
+>
+> - [YouTube: How to use JWT with RSA key-pair in micro-services](https://youtu.be/KQPuPbaf7vk)
+> - [Auth0 Blog: Navigating RS256 and JWKS](https://auth0.com/blog/navigating-rs256-and-jwks/)
+> - [CryptoTools: RSA Key Generator](https://cryptotools.net/rsagen)
+
 ## 1. Create the two repositories
 
 It's simpler to use `express-draft` and then use `exp .` to generate a simple express application inside each of the repos.
