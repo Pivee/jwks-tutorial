@@ -10,7 +10,6 @@ function getJwks(publicKey) {
       ),
     ],
   };
-  // return pem2jwk(privateKey, { use: "sig", kid: "123" }, "public");
 }
 
 module.exports = {
