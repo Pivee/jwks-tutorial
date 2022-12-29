@@ -1,7 +1,8 @@
 const fs = require("fs");
 const { join } = require("path");
+const { getJwksClient } = require("./getJwksClient");
 
-function getRsaPublicKey(
+function getRsaPublicKeyFromFile(
   filePath = join(__dirname, "../certs/public.pem"),
   { returnType = undefined } = {}
 ) {
@@ -17,6 +18,16 @@ function getRsaPublicKey(
   return key;
 }
 
+async function getRsaPublicKeyFromJwks(
+  jwksUri = "http://localhost:4000/.well-known/jwks.json",
+  { returnType = undefined } = {}
+) {
+  const key = await (await getJwksClient(jwksUri)).getSigningKey();
+
+  return key;
+}
+
 module.exports = {
-  getRsaPublicKey,
+  getRsaPublicKeyFromFile,
+  getRsaPublicKeyFromJwks,
 };

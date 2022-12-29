@@ -3,7 +3,7 @@ const { createToken } = require("../utils/createToken");
 const { getRsaPrivateKey } = require("../utils/getRsaPrivateKey");
 
 router.get("/", async (req, res, next) => {
-  const payload = {};
+  const payload = { kid: "AUTH_KID" };
 
   res.send({
     tokenResponse: {
